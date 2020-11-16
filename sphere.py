@@ -16,14 +16,15 @@ import vtk
 class Himmelskoerper():
     def __init__(self, Umkreisungskoerper, position, radius, color):
 
-        self = vtk.vtkSphereSource()
-        self.Umkreisungskoerper = Umkreisungskoerper
-        self.SetCenter(position)
-        self.SetRadius(radius)
-        self.color = color
-        self.SetPhiResolution(100)
-        self.SetThetaResolution(100)
-        self.OutputPort = GetOutputPort()
+        self.Port = vtk.vtkSphereSource()
+        self.Port.Umkreisungskoerper = Umkreisungskoerper
+        self.Port.SetCenter(position)
+        self.Port.SetRadius(radius)
+        self.Port.color = color
+        self.Port.SetPhiResolution(100)
+        self.Port.SetThetaResolution(100)
+
+
 
 
 Sonne = Himmelskoerper(0, (0, 0, 0), 5, "yellow")
@@ -36,27 +37,6 @@ colors = vtk.vtkNamedColors()
 
 
 #############################################################
-# Create the objects that should be rendered
-# Create a sphere using the vtk class.
-'''Sonne = vtk.vtkSphereSource()
-Sonne.SetCenter(0.0, 0.0, 0.0)
-Sonne.SetRadius(5.0)
-# Make the surface smooth.
-Sonne.SetPhiResolution(100)
-Sonne.SetThetaResolution(100)
-
-    Erde = vtk.vtkSphereSource()
-    Erde.SetCenter(8, -5, 0)
-    Erde.SetRadius(1.0)
-    Erde.SetPhiResolution(100)
-    Erde.SetThetaResolution(100)
-
-    Mond = vtk.vtkSphereSource()
-    Mond.SetCenter(6,-7,0)
-    Mond.SetRadius(0.5)
-    Mond.SetPhiResolution(100)
-    Mond.SetThetaResolution(100)'''
-#############################################################
 
 #############################################################
 # fill the VTK rendering pipeline with the data of the objects
@@ -64,9 +44,9 @@ Sonne.SetThetaResolution(100)
 mapper = vtk.vtkPolyDataMapper()
 mapper2 = vtk.vtkPolyDataMapper()
 mapper3 = vtk.vtkPolyDataMapper()
-mapper.SetInputConnection(Sonne.GetOutputPort())
-mapper2.SetInputConnection(Erde.GetOutputPort())
-mapper3.SetInputConnection(Mond.GetOutputPort())
+mapper.SetInputConnection(Sonne.Port.GetOutputPort())
+mapper2.SetInputConnection(Erde.Port.GetOutputPort())
+mapper3.SetInputConnection(Mond.Port.GetOutputPort())
 
 actor = vtk.vtkActor()
 actor2 = vtk.vtkActor()
