@@ -15,15 +15,17 @@ import vtk
 jpegSonne = "sun.jpg"
 jpegErde = "earth.jpg"
 jpegMond = "moon.jpg"
+jpegMars = "mars.jpg"
+jpegVenus = "venus.jpg"
 
 class Himmelskoerper():
-    def __init__(self, Umkreisungskoerper, position, radius, color):
+    def __init__(self, Umkreisungskoerper, position, radius, texture):
 
         self.Source = vtk.vtkSphereSource()
         self.Source.Umkreisungskoerper = Umkreisungskoerper
         self.Source.Position = self.Source.SetCenter(position)
         self.Source.SetRadius(radius)
-        self.Source.color = color
+        self.Source.texture = texture
         self.Source.SetPhiResolution(100)
         self.Source.SetThetaResolution(100)
 
@@ -39,9 +41,11 @@ def callback_func(caller, timer_event):
 # Create the objects that should be rendered
 # Create a sphere using the vtk class.
 
-Sonne = Himmelskoerper(0, (0, 0, 0), 5, "yellow")
-Erde = Himmelskoerper(Sonne, (8, -5, 0), 1, "blue")
-Mond = Himmelskoerper(Erde, (6, -7, 0), 0.5, "red")
+Sonne = Himmelskoerper(0, (0, 0, 0), 5, "jpegSonne")
+Erde = Himmelskoerper(Sonne, (8, -5, 0), 1, "jpegErde")
+Mond = Himmelskoerper(Erde, (7, -7, 0), 0.5, "jpegMond")
+Mars = Himmelskoerper(Sonne, (10, -9.5, 0), 0.75, "jpegMars")
+Venus = Himmelskoerper(Sonne, (6, -4, 0), 1.1, "jpegVenus")
 
 
 # get the names of VTK's predefined colors
@@ -66,7 +70,10 @@ readerErde = vtk.vtkJPEGReader()
 readerErde.SetFileName(jpegErde)
 readerMond = vtk.vtkJPEGReader()
 readerMond.SetFileName(jpegMond)
-
+readerMars = vtk.vtkJPEGReader()
+readerMars.SetFileName(jpegMars)
+readerVenus = vtk.vtkJPEGReader()
+readerVenus.SetFileName(jpegVenus)
 #texture
 #Sonne
 textureSonne = vtk.vtkTexture()
@@ -88,6 +95,20 @@ if vtk.VTK_MAJOR_VERSION <= 5:
     textureMond.setInput(readerMond.GetOutput())
 else:
     textureMond.SetInputConnection(readerMond.GetOutputPort())
+
+#Mars
+textureMars = vtk.vtkTexture()
+if vtk.VTK_MAJOR_VERSION <= 5:
+    textureMars.setInput(readerMars.GetOutput())
+else:
+    textureMars.SetInputConnection(readerMars.GetOutputPort())
+
+#Venus
+textureVenus = vtk.vtkTexture()
+if vtk.VTK_MAJOR_VERSION <= 5:
+    textureVenus.setInput(readerVenus.GetOutput())
+else:
+    textureVenus.SetInputConnection(readerVenus.GetOutputPort())
 
 # Map texture coordinates
 #Sonne
@@ -114,8 +135,23 @@ else:
     map_to_sphere_Mond.SetInputConnection(Mond.Source.GetOutputPort())
 map_to_sphere_Mond.PreventSeamOn()
 
+#Mars
+map_to_sphere_Mars = vtk.vtkTextureMapToSphere()
+if vtk.VTK_MAJOR_VERSION <= 5:
+    map_to_sphere_Mars.SetInput(Mars.Source.GetOutput())
+else:
+    map_to_sphere_Mars.SetInputConnection(Mars.Source.GetOutputPort())
+map_to_sphere_Mars.PreventSeamOn()
+
+#Venus
+map_to_sphere_Venus = vtk.vtkTextureMapToSphere()
+if vtk.VTK_MAJOR_VERSION <= 5:
+    map_to_sphere_Venus.SetInput(Venus.Source.GetOutput())
+else:
+    map_to_sphere_Venus.SetInputConnection(Venus.Source.GetOutputPort())
+map_to_sphere_Venus.PreventSeamOn()
+
 #mapper
-#Sonne
 mapperSonne = vtk.vtkPolyDataMapper()
 
 if vtk.VTK_MAJOR_VERSION <= 5:
@@ -123,7 +159,6 @@ if vtk.VTK_MAJOR_VERSION <= 5:
 else:
     mapperSonne.SetInputConnection(map_to_sphere_Sonne.GetOutputPort())
 
-#Erde
 mapperErde = vtk.vtkPolyDataMapper()
 
 if vtk.VTK_MAJOR_VERSION <= 5:
@@ -131,7 +166,6 @@ if vtk.VTK_MAJOR_VERSION <= 5:
 else:
     mapperErde.SetInputConnection(map_to_sphere_Erde.GetOutputPort())
 
-#Mond    
 mapperMond = vtk.vtkPolyDataMapper()
 
 if vtk.VTK_MAJOR_VERSION <= 5:
@@ -139,16 +173,44 @@ if vtk.VTK_MAJOR_VERSION <= 5:
 else:
     mapperMond.SetInputConnection(map_to_sphere_Mond.GetOutputPort())
 
+mapperMars = vtk.vtkPolyDataMapper()
+
+if vtk.VTK_MAJOR_VERSION <= 5:
+    mapperMars.SetInput(map_to_sphere_Mars.GetOutput())
+else:
+    mapperMars.SetInputConnection(map_to_sphere_Mars.GetOutputPort())
+
+mapperVenus = vtk.vtkPolyDataMapper()
+
+if vtk.VTK_MAJOR_VERSION <= 5:
+    mapperVenus.SetInput(map_to_sphere_Venus.GetOutput())
+else:
+    mapperVenus.SetInputConnection(map_to_sphere_Venus.GetOutputPort())
+
+#mapperSonne.SetInputConnection(Sonne.Source.GetOutputPort())
+#mapperErde.SetInputConnection(Erde.Source.GetOutputPort())
+#mapperMond.SetInputConnection(Mond.Source.GetOutputPort())
+
 #actor
 actorSonne = vtk.vtkActor()
 actorErde = vtk.vtkActor()
 actorMond = vtk.vtkActor()
+actorMars = vtk.vtkActor()
+actorVenus = vtk.vtkActor()
 actorSonne.SetMapper(mapperSonne)
 actorSonne.SetTexture(textureSonne)
 actorErde.SetMapper(mapperErde)
 actorErde.SetTexture(textureErde)
 actorMond.SetMapper(mapperMond)
 actorMond.SetTexture(textureMond)
+actorMars.SetMapper(mapperMars)
+actorMars.SetTexture(textureMars)
+actorVenus.SetMapper(mapperVenus)
+actorVenus.SetTexture(textureVenus)
+
+#actorSonne.GetProperty().SetColor(colors.GetColor3d(Sonne.Source.color))
+#actorErde.GetProperty().SetColor(colors.GetColor3d(Erde.Source.color))
+#actorMond.GetProperty().SetColor(colors.GetColor3d(Mond.Source.color))
 
 #############################################################
 ##Render
@@ -156,6 +218,8 @@ renderer = vtk.vtkRenderer()
 renderer.AddActor(actorSonne)
 renderer.AddActor(actorErde)
 renderer.AddActor(actorMond)
+renderer.AddActor(actorMars)
+renderer.AddActor(actorVenus)
 renderer.SetBackground(colors.GetColor3d("Black"))
 ##window
 window = vtk.vtkRenderWindow()
