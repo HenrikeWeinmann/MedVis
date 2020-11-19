@@ -12,40 +12,66 @@
 #############################################################
 
 import vtk
+import math
 
 class Himmelskoerper():
-    def __init__(self, Umkreisungskoerper, position, radius, color):
+    def __init__(self, Umkreisungskoerper, X, Y , Z, radius, color, speed):
 
         self.Source = vtk.vtkSphereSource()
         self.Source.Umkreisungskoerper = Umkreisungskoerper
-        self.Source.Position = self.Source.SetCenter(position)
+        self.Source.X = X
+        self.Source.Y = Y
+        self.Source.Z = Z
+        self.Source.SetCenter(X, Y, Z)
+        self.Source.Position =[X,Y,Z]
         self.Source.SetRadius(radius)
         self.Source.color = color
         self.Source.SetPhiResolution(100)
         self.Source.SetThetaResolution(100)
-        self.Source.mapper = vtk.vtkPolyDataMapper()
-        self.Source.mapper.SetInputConnection(self.Source.GetOutputPort())
+        self.Source.Speed = speed
 
 
 refresh_rate = 60 # In Hertz
+
 def callback_func(caller, timer_event):
-    actor.RotateZ(1)
     # This needs to be called to render the updated actor
     # orientation.
+    #transformErde.RotateWXYZ(1, 1, 1, 1)
+    transformErde.Translate(translation(Erde,Erde.Source.Speed))
+    transformErdeFilter.Update()
+    transformMond.Translate(translation(Mond,Erde.Source.Speed))
+    transformMond.RotateWXYZ(0.1,0,1,0)
+    transformMondFilter.Update()
     window.Render()
 
+
+def newPos(oldPos ,axis, deg):
+    if axis== "z":
+        return [math.cos(deg)*oldPos[0]-math.sin(deg)*oldPos[1],math.sin(deg)*oldPos[0]+math.cos(deg)*oldPos[1],oldPos[2]]
+    if axis == "x":
+        return [oldPos[0],math.cos(deg)*oldPos[1]-math.sin(deg)*oldPos[2],math.sin(deg)*oldPos[1]+math.cos(deg)*oldPos[2]]
+
+def translation(Himmelskoerper,speed):
+    pos = Himmelskoerper.Source.Position
+    newpos= newPos(pos,"z",math.pi/speed)
+
+    Himmelskoerper.Source.Position = newpos
+    return [newpos[0] - pos[0],newpos[1] - pos[1],newpos[2] - pos[2]]
+
+def updatePos(Himmelskoerper,newpos):
+    Himmelskoerper.Source.Position=newpos
+#print(newPos([1,0,0],"z",math.pi))
 #############################################################
 # Create the objects that should be rendered
 # Create a sphere using the vtk class.
 
-Sonne = Himmelskoerper(0, (0, 0, 0), 5, "yellow")
-Erde = Himmelskoerper(Sonne, (8, -5, 0), 1, "blue")
-Mond = Himmelskoerper(Erde, (6, -7, 0), 0.5, "red")
+Sonne = Himmelskoerper(0, 0, 0, 0, 5, "yellow",1)
+Erde = Himmelskoerper(Sonne, Sonne.Source.X +8,Sonne.Source.Y -5, Sonne.Source.Z, 1, "blue",400)
+Mond = Himmelskoerper(Erde, Erde.Source.X+2, Erde.Source.Y+1, Erde.Source.Z, 0.5, "red",50)
 
 
 # get the names of VTK's predefined colors
 colors = vtk.vtkNamedColors()
-
 
 #############################################################
 
@@ -53,12 +79,32 @@ colors = vtk.vtkNamedColors()
 # fill the VTK rendering pipeline with the data of the objects
 # source (-> filter) -> mapper -> actor -> renderer -> render window
 
+#Transformer
+#Erde
+transformErde = vtk.vtkTransform()
+transformErdeFilter = vtk.vtkTransformPolyDataFilter()
+transformErdeFilter.SetTransform(transformErde)
+transformErdeFilter.SetInputConnection(Erde.Source.GetOutputPort())
+transformErdeFilter.Update()
+#Mond
+transformMond = vtk.vtkTransform()
+transformMondFilter = vtk.vtkTransformPolyDataFilter()
+transformMondFilter.SetTransform(transformMond)
+transformMondFilter.SetInputConnection(Mond.Source.GetOutputPort())
+transformMondFilter.Update()
+
+mapper = vtk.vtkPolyDataMapper()
+mapper.SetInputConnection(Sonne.Source.GetOutputPort())
+mapperE = vtk.vtkPolyDataMapper()
+mapperE.SetInputConnection(transformErdeFilter.GetOutputPort())
+mapperM = vtk.vtkPolyDataMapper()
+mapperM.SetInputConnection(transformMondFilter.GetOutputPort())
 actor = vtk.vtkActor()
 actor2 = vtk.vtkActor()
 actor3 = vtk.vtkActor()
-actor.SetMapper(Sonne.Source.mapper)
-actor2.SetMapper(Erde.Source.mapper)
-actor3.SetMapper(Mond.Source.mapper)
+actor.SetMapper(mapper)
+actor2.SetMapper(mapperE)
+actor3.SetMapper(mapperM)
 actor.GetProperty().SetColor(colors.GetColor3d(Sonne.Source.color))
 actor2.GetProperty().SetColor(colors.GetColor3d(Erde.Source.color))
 actor3.GetProperty().SetColor(colors.GetColor3d(Mond.Source.color))
@@ -94,6 +140,6 @@ interactor.AddObserver("TimerEvent", callback_func)
 # motion of the arrow. Zoom out a litle.
 cam = renderer.GetActiveCamera()
 cam.SetPosition(0,0,50)
-
+window.SetSize(500, 500)
 window.Render()
 interactor.Start()
